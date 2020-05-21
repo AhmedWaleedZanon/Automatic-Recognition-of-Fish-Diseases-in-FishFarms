@@ -1,0 +1,67 @@
+load('Fishdetect.mat');
+positiveInstances = gTruth(:,1:2);
+imDir = fullfile('');
+addpath(imDir);
+
+negativeFolder = fullfile('');
+
+
+negativeImages = imageDatastore(negativeFolder);
+
+trainCascadeObjectDetector('stopSignDetector.xml',positiveInstances, ...
+    negativeFolder,'FalseAlarmRate',0.1,'NumCascadeStages',5);
+
+
+
+videoFileReader = VideoReader('testvideo1.avi');
+myVideo = VideoWriter('Myfile.avi');
+folder = '';
+
+% Setup: create deployable video player and face detector
+depVideoPlayer = vision.DeployableVideoPlayer;
+Detector = vision.CascadeObjectDetector('stopSignDetector.xml');
+
+open(myVideo);
+
+while hasFrame(videoFileReader)
+    % read video frame
+    videoFrame = readFrame(videoFileReader);
+    % process frame
+    Detector.MinSize = [63    279 ];
+    Detector.MergeThreshold =20;
+    bbox =Detector(videoFrame);
+
+
+
+ videoFrames = insertObjectAnnotation(videoFrame,'rectangle',bbox,'Fish');
+
+      
+   i=0;
+%crop the  fish and save it
+for j=1:size(bbox,1)
+    FishCrop=imcrop(videoFrame,bbox(j,1:4));
+    baseFileName = sprintf('%d.png', i); % e.g. "1.png"
+    fullFileName = fullfile(folder, baseFileName); % No need to worry about slashes now!
+    imwrite(FishCrop, fullFileName);
+    i=i+1;
+  
+end
+
+
+    %annotatedImage = insertShape(img,"rectangle",bbox,"Fish");
+    %figure; imshow(detectedImg);title('Detect Frame');
+    n=size(bbox,1);
+    str_n=num2str(n);
+    str=strcat(str_n,' fish Detect');
+    disp(str);
+ 
+    % Display video frame to screen
+    depVideoPlayer(videoFrames);
+    % Write frame to final video file
+    writeVideo(myVideo, videoFrames);
+   
+    pause(1/videoFileReader.FrameRate);  
+   
+end
+  
+close(myVideo)
