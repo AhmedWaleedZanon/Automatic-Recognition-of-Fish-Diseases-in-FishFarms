@@ -26,7 +26,7 @@ imshow(readimage(imds,NormalFish));
 
 
 [imdsTrain] = splitEachLabel(imds,0.7,'randomized');
-net = alexnet
+net = mobilenetv2
 net.Layers;
 analyzeNetwork(net);
 imageSize=net.Layers(1).InputSize
@@ -35,7 +35,7 @@ layersTransfer = net.Layers(1:end-3);
 augimdsTrain = augmentedImageDatastore(imageSize(1:2),imdsTrain, ...
     'ColorPreprocessing','gray2rgb');
 
-layer = 'fc7';
+layer = 'ClassificationLayer_Logits';
 featuresTrain = activations(net,augimdsTrain,layer,'OutputAs','rows');
 
 YTrain = imdsTrain.Labels;
@@ -44,7 +44,7 @@ classifier = fitcecoc(featuresTrain,YTrain);
 
 
 layers = [ ...
-    imageInputLayer([227 227 3])
+    imageInputLayer([224   224     3])
     convolution2dLayer(5,20)
     reluLayer
     maxPooling2dLayer(2,'Stride',2)
@@ -57,7 +57,7 @@ layers = [ ...
 options = trainingOptions('sgdm', ...
     'MiniBatchSize',10, ...
     'MaxEpochs',10, ...
-    'InitialLearnRate',1e-3, ...
+    'InitialLearnRate',1e-1, ...
     'Verbose',false, ...
     'Plots','training-progress');
 trainedNet = trainNetwork(augimdsTrain,layers,options);
